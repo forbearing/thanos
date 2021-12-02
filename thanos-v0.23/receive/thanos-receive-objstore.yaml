@@ -1,0 +1,22 @@
+# doc:
+#   https://github.com/thanos-io/thanos/blob/main/docs/storage.md
+apiVersion: v1
+kind: Secret
+metadata:
+  name: thanos-receive-objstore
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+stringData:
+  bucket.yaml: |
+    type: S3
+    config:
+      bucket: "<bucket_name>"
+      endpoint: "<endpoint>"
+      access_key: "<access_key>"
+      secret_key: "<secret_key>"
+      insecure: true
+      #signature_version2: true
