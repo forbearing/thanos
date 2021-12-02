@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-querier
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  - name: grpc
+    port: 10903
+    targetPort: 10903
+  selector:
+    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/component: querier
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-querier
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/component: querier
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-querier
+      app.kubernetes.io/component: querier
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-querier
+        app.kubernetes.io/component: querier
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-querier
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - thanos-querier
+            topologyKey: kubernetes.io/hostname
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-querier
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - thanos-querier
+            topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: thanos-querier
+        image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        # querier 可以从 thanos-receive 和 thanos-store 查询数据
+        args: 
+        - query 
+        - --log.level=info
+        - --log.format=logfmt
+        - --http-address=0.0.0.0:9090
+        - --grpc-address=0.0.0.0:10903
+        - --query.replica-label=replica
+        - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local
+        #- --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local
+        - --query.auto-downsampling
+        ports:
+        - name: http
+          containerPort: 9090
+        - name: grpc
+          containerPort: 10903
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /-/healthy
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 3
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /-/ready
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        terminationMessagePolicy: FallbackToLogsOnError
