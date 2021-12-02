@@ -155,14 +155,14 @@ spec:
         - --label=receive="true"
         - --receive.local-endpoint=$(NAME).thanos-receive.$(NAMESPACE).svc.cluster.local:10907
         - --receive.hashrings-file=/var/lib/thanos-receive/hashrings.json
-        - --objstore.config-file=/config/thanos-store.yaml
+        - --objstore.config-file=/config/bucket.yaml
         volumeMounts:
         - mountPath: /var/lib/thanos-receive
           name: thanos-receive-hashring
         - mountPath: /var/thanos/receive
           name: data
           readOnly: false
-        - name: thanos-store
+        - name: thanos-receive-objstore
           mountPath: /config
         ports:
         - name: grpc
@@ -213,9 +213,9 @@ spec:
       - name: thanos-receive-hashring
         configMap:
           name: thanos-receive-hashring
-      - name: thanos-store
+      - name: thanos-receive-objstore
         secret:
-          secretName: thanos-store
+          secretName: thanos-receive-objstore
   volumeClaimTemplates:
   - metadata:
       name: data
