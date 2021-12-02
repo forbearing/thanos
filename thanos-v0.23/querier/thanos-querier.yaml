@@ -96,7 +96,7 @@ spec:
         - name: grpc
           containerPort: 10903
         livenessProbe:
-          failureThreshold: 10
+          failureThreshold: 4
           httpGet:
             path: /-/healthy
             port: 9090
@@ -106,7 +106,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 3
         readinessProbe:
-          failureThreshold: 10
+          failureThreshold: 20
           httpGet:
             path: /-/ready
             port: 9090
