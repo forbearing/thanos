@@ -61,6 +61,7 @@ spec:
   selector:
     app.kubernetes.io/name: thanos-ruler
     app.kubernetes.io/component: ruler
+    app.kubernetes.io/part-of: thanos
 
 ---
 apiVersion: apps/v1
@@ -80,11 +81,13 @@ spec:
     matchLabels:
       app.kubernetes.io/name: thanos-ruler
       app.kubernetes.io/component: ruler
+      app.kubernetes.io/part-of: thanos
   template:
     metadata:
       labels:
         app.kubernetes.io/name: thanos-ruler
         app.kubernetes.io/component: ruler
+        app.kubernetes.io/part-of: thanos
     spec:
       terminationGracePeriodSeconds: 120
       securityContext:
