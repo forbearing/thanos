@@ -1,4 +1,4 @@
-##  Introduce
+## Introduce
 Deploy Thanos in Kubernetes
 
 
