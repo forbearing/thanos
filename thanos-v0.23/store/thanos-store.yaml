@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-store
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/component: store
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: grpc
+    port: 10905
+    targetPort: 10905
+  - name: http
+    port: 10906
+    targetPort: 10906
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/component: store
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-store
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/component: store
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  replicas: 3
+  serviceName: thanos-store
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-store
+      app.kubernetes.io/component: store
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-store
+        app.kubernetes.io/component: store
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-store
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - store
+            topologyKey: kubernetes.io/hostname
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-store
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - store
+            topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: thanos-store
+        image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        args:
+        - store
+        - --log.level=info
+        - --log.format=logfmt
+        - --data-dir=/var/thanos/store
+        - --grpc-address=0.0.0.0:10905
+        - --http-address=0.0.0.0:10906
+        - --objstore.config-file=/config/bucket.yaml
+        - --ignore-deletion-marks-delay=24h
+        ports:
+        - name: grpc
+          containerPort: 10905
+        - name: http
+          containerPort: 10906
+        env:
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 10906
+            scheme: HTTP
+          failureThreshold: 8
+          periodSeconds: 30
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 10906
+            scheme: HTTP
+          failureThreshold: 20
+          periodSeconds: 5
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+        resources: {}
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: data
+          mountPath: /var/thanos/store
+          readOnly: false
+        - name: thanos-objstore
+          mountPath: /config
+      volumes:
+      - name: thanos-objstore
+        secret:
+          secretName: thanos-objstore
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
