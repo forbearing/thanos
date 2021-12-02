@@ -1,0 +1,230 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-receive-external
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10909
+    protocol: TCP
+    targetPort: 10909
+    #nodePort: 30909
+  - name: remote-write
+    port: 10908
+    protocol: TCP
+    targetPort: 10908
+    nodePort: 30908
+  - name: grpc
+    port: 10907
+    protocol: TCP
+    targetPort: 10907
+    #nodePort: 30907
+  selector:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-receive
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10909
+    protocol: TCP
+    targetPort: 10909
+  - name: remote-write
+    port: 10908
+    protocol: TCP
+    targetPort: 10908
+  - name: grpc
+    port: 10907
+    protocol: TCP
+    targetPort: 10907
+  selector:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+  clusterIP: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-receive-hashring
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+data:
+  #域名通过headless service规则可以预先获知：https://kubernetes.io/zh/docs/concepts/services-networking/dns-pod-service/#srv-records
+  hashrings.json: |
+    [
+      {
+        "endpoints":
+        [
+          "thanos-receive-0.thanos-receive.monitoring.svc.cluster.local:10907",
+          "thanos-receive-1.thanos-receive.monitoring.svc.cluster.local:10907",
+          "thanos-receive-2.thanos-receive.monitoring.svc.cluster.local:10907"
+        ]
+      }
+    ]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-receive
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  replicas: 3
+  serviceName: thanos-receive
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-receive
+      app.kubernetes.io/component: receive
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-receive
+        app.kubernetes.io/component: receive
+    spec:
+      terminationGracePeriodSeconds: 900
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-receive
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - receive
+            topologyKey: kubernetes.io/hostname
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-receive
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - receive
+            topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: thanos-receive
+        image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        args:
+        - receive
+        - --log.level=info
+        - --log.format=logfmt
+        - --tsdb.path=/var/thanos/receive
+        - --tsdb.retention=15d
+        #- --tsdb.wal-compression
+        - --grpc-address=0.0.0.0:10907
+        - --remote-write.address=0.0.0.0:10908
+        - --http-address=0.0.0.0:10909
+        - --receive.replication-factor=1
+        - --label=replica="$(NAME)"
+        - --label=receive="true"
+        - --receive.local-endpoint=$(NAME).thanos-receive.$(NAMESPACE).svc.cluster.local:10907
+        - --receive.hashrings-file=/var/lib/thanos-receive/hashrings.json
+        - --objstore.config-file=/config/thanos-store.yaml
+        volumeMounts:
+        - mountPath: /var/lib/thanos-receive
+          name: thanos-receive-hashring
+        - mountPath: /var/thanos/receive
+          name: data
+          readOnly: false
+        - name: thanos-store
+          mountPath: /config
+        ports:
+        - name: grpc
+          containerPort: 10907
+        - name: remote-write
+          containerPort: 10908
+        - name: http
+          containerPort: 10909
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /-/healthy
+            port: 10909
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 3
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10909
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        env:
+        - name: NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        #resources:
+        #  limits:
+        #    cpu: 1
+        #    memory: 2Gi
+        terminationMessagePolicy: FallbackToLogsOnError
+      volumes:
+      - name: thanos-receive-hashring
+        configMap:
+          name: thanos-receive-hashring
+      - name: thanos-store
+        secret:
+          secretName: thanos-store
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      #storageClassName: rook-ceph-block
+      storageClassName: nfs-sc
+      resources:
+        requests:
+          storage: 10Gi

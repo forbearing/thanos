@@ -1,0 +1,27 @@
+# doc:
+#   https://github.com/thanos-io/thanos/blob/main/docs/storage.md
+apiVersion: v1
+kind: Secret
+metadata:
+  name: thanos-store
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-receive
+    app.kubernetes.io/component: receive
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+stringData:
+  thanos-store.yaml: |
+    type: S3
+    config:
+      #bucket: "thanos-receive"
+      #endpoint: "minio.minio-tenant-thanos.svc.cluster.local:443"
+      #endpoint: "minio.minio-tenant-thanos.svc.cluster.local"
+      #access_key: "thanos"
+      #secret_key: "abc123.com"
+      bucket: "thanos"
+      endpoint: "minio.minio-tenant-proxima.svc.cluster.local"
+      access_key: "thanos"
+      secret_key: "abc123.com"
+      insecure: true
+      #signature_version2: true
