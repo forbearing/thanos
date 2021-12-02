@@ -78,7 +78,7 @@ spec:
       containers:
       - name: thanos-querier
         image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
-        # querier 可以从 thanos-receive 和 thanos-store 查询数据
+        # querier 可以从 thanos-receive, thanos-store thanos-sidecar 查询数据
         args: 
         - query 
         - --log.level=info
@@ -86,8 +86,9 @@ spec:
         - --http-address=0.0.0.0:9090
         - --grpc-address=0.0.0.0:10903
         - --query.replica-label=replica
-        - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local
-        #- --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local     # 从 thanos-receive 查询数据
+        - --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local       # 从 thanos-store 查询数据
+        #- --store=dnssrv+_grpc._tcp.thanos-sidecar.monitoring.svc.cluster.local    # 从 thanos-sidecar 查询数据
         - --query.auto-downsampling
         ports:
         - name: http
