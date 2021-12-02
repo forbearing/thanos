@@ -7,6 +7,7 @@
   # 有了 thanos 已经不需要多个 prometheus 了
   # alertmanager 还是需要多个，一般是 3 个
   replicas: 1
+
   # 一定要 externalLabels，否则就会有 metrics 重复，导致 thanos 和 prometheus remote write 出错
   externalLabels:
     cluster: "<cluster_name>"
