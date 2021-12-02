@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-compactor
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-compactor
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10912
+    targetPort: 10912
+  selector:
+    app.kubernetes.io/name: thanos-compactor
+    app.kubernetes.io/component: compactor
+  clusterIP: None
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-compactor
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-compactor
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  replicas: 1
+  serviceName: thanos-compactor
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-compactor
+      app.kubernetes.io/component: compactor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-compactor
+        app.kubernetes.io/component: compactor
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-compactor
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - compactor
+            topologyKey: kubernetes.io/hostname
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-compactor
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - compactor
+            topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: thanos-compactor
+        image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        args:
+        - compact
+        - --wait
+        - --log.level=info
+        - --log.format=logfmt
+        - --http-address=0.0.0.0:10912
+        - --data-dir=/var/thanos/compactor
+        - --debug.accept-malformed-index
+        - --retention.resolution-raw=0d
+        - --retention.resolution-5m=0d
+        - --retention.resolution-1h=0d
+        - --delete-delay=48h
+        - --downsampling.disable
+        - --objstore.config-file=/config/bucket.yaml
+        ports:
+        - name: http
+          containerPort: 10912
+        env:
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 10912
+            scheme: HTTP
+          failureThreshold: 4
+          periodSeconds: 30
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 10912
+            scheme: HTTP
+          failureThreshold: 20
+          periodSeconds: 5
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+        resources: {}
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: data
+          mountPath: /var/thanos/compactor
+          readOnly: false
+        - name: thanos-objstore
+          mountPath: /config
+      volumes:
+      - name: thanos-objstore
+        secret:
+          secretName: thanos-objstore
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
