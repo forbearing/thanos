@@ -1,5 +1,6 @@
-# doc:
+# ref:
 #   https://github.com/thanos-io/thanos/blob/main/docs/storage.md
+
 apiVersion: v1
 kind: Secret
 metadata:
