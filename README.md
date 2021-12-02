@@ -1,8 +1,6 @@
 ## Introduce
 Deploy Thanos in Kubernetes
 
-
-
 ## All thanos ports
 
 ---
@@ -22,3 +20,22 @@ Deploy Thanos in Kubernetes
 | Rule           | HTTP                    | 10911 |
 | Compact        | HTTP                    | 10912 |
 | Query Frontend | HTTP                    | 10913 |
+
+
+
+### grafana 添加 thanos-querier 数据源
+
+<img src="doc/pics/grafana_add-thanos-querier.png" alt="grafana_add-thanos-querier" style="zoom:50%;" />
+
+
+
+### thanos-querier 截图
+
+<img src="doc/pics/thanos-query_stores.png" alt="thanos-query_stores" style="zoom:50%;" />
+
+### thanos 所有的 pod 和 service
+
+![all-thanos-service](doc/pics/all-thanos-service.png)
+
+![all-thanos-pod](doc/pics/all-thanos-pod.png)
+
