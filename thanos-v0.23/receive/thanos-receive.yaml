@@ -162,7 +162,7 @@ spec:
         - mountPath: /var/thanos/receive
           name: data
           readOnly: false
-        - name: thanos-receive-objstore
+        - name: thanos-objstore
           mountPath: /config
         ports:
         - name: grpc
@@ -213,9 +213,9 @@ spec:
       - name: thanos-receive-hashring
         configMap:
           name: thanos-receive-hashring
-      - name: thanos-receive-objstore
+      - name: thanos-objstore
         secret:
-          secretName: thanos-receive-objstore
+          secretName: thanos-objstore
   volumeClaimTemplates:
   - metadata:
       name: data
