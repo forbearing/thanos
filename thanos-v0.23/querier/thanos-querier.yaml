@@ -62,7 +62,7 @@ spec:
               - key: app.kubernetes.io/component
                 operator: In
                 values:
-                - thanos-querier
+                - querier
             topologyKey: kubernetes.io/hostname
           - labelSelector:
               matchExpressions:
@@ -73,7 +73,7 @@ spec:
               - key: app.kubernetes.io/component
                 operator: In
                 values:
-                - thanos-querier
+                - querier
             topologyKey: topology.kubernetes.io/zone
       containers:
       - name: thanos-querier
