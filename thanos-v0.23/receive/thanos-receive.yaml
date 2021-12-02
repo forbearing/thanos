@@ -96,6 +96,7 @@ metadata:
 spec:
   replicas: 3
   serviceName: thanos-receive
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/name: thanos-receive
