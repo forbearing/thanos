@@ -21,8 +21,6 @@ Deploy Thanos in Kubernetes
 | Compact        | HTTP                    | 10912 |
 | Query Frontend | HTTP                    | 10913 |
 
-
-
 ### grafana 添加 thanos-querier 数据源
 
 <img src="doc/pics/grafana_add-thanos-querier.png" alt="grafana_add-thanos-querier" style="zoom:50%;" />
