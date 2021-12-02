@@ -29,6 +29,7 @@ spec:
   selector:
     app.kubernetes.io/name: thanos-receive
     app.kubernetes.io/component: receive
+    app.kubernetes.io/part-of: thanos
   type: NodePort
 ---
 apiVersion: v1
@@ -58,6 +59,7 @@ spec:
   selector:
     app.kubernetes.io/name: thanos-receive
     app.kubernetes.io/component: receive
+    app.kubernetes.io/part-of: thanos
   clusterIP: None
 ---
 apiVersion: v1
@@ -101,11 +103,13 @@ spec:
     matchLabels:
       app.kubernetes.io/name: thanos-receive
       app.kubernetes.io/component: receive
+      app.kubernetes.io/part-of: thanos
   template:
     metadata:
       labels:
         app.kubernetes.io/name: thanos-receive
         app.kubernetes.io/component: receive
+        app.kubernetes.io/part-of: thanos
     spec:
       terminationGracePeriodSeconds: 900
       securityContext:
