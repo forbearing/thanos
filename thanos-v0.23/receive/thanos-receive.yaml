@@ -71,7 +71,6 @@ metadata:
     app.kubernetes.io/version: v0.23.1
     app.kubernetes.io/part-of: thanos
 data:
-  #域名通过headless service规则可以预先获知：https://kubernetes.io/zh/docs/concepts/services-networking/dns-pod-service/#srv-records
   hashrings.json: |
     [
       {
