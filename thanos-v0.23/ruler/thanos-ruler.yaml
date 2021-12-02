@@ -1,0 +1,199 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-ruler-rules
+  namespace: monitoring
+  metadata:
+  labels:
+    app.kubernetes.io/name: thanos-ruler-rules
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+data:
+  examples.yamls: |
+    groups:
+    - name: kubernetes-system-kubelet
+      rules:
+      - alert: KubeNodeNotReady
+        annotations:
+          description: '{{ $labels.node }} has been unready for more than 15 minutes.'
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubenodenotready
+          summary: Node is not ready.
+        expr: |
+          kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
+        for: 15m
+        labels:
+          severity: warning
+      - alert: KubeNodeUnreachable
+        annotations:
+          description: '{{ $labels.node }} is unreachable and some workloads may be rescheduled.'
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubenodeunreachable
+          summary: Node is unreachable.
+        expr: |
+          (kube_node_spec_taint{job="kube-state-metrics",key="node.kubernetes.io/unreachable",effect="NoSchedule"} unless ignoring(key,value) kube_node_spec_taint{job="kube-state-metrics",key=~"ToBeDeletedByClusterAutoscaler|cloud.google.com/impending-node-termination|aws-node-termination-handler/spot-itn"}) == 1
+        for: 15m
+        labels:
+          severity: warning
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-ruler
+  namespace: monitoring
+  metadata:
+  labels:
+    app.kubernetes.io/name: thanos-ruler
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: grpc
+    port: 10910
+    targetPort: 10910
+  - name: http
+    port: 10911
+    targetPort: 10911
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: thanos-ruler
+    app.kubernetes.io/component: ruler
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-ruler
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-ruler
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  replicas: 3
+  serviceName: thanos-ruler
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-ruler
+      app.kubernetes.io/component: ruler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-ruler
+        app.kubernetes.io/component: ruler
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-ruler
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - ruler
+            topologyKey: kubernetes.io/hostname
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-ruler
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - ruler
+            topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: thanos-ruler
+        image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        args:
+        - rule
+        - --log.level=info
+        - --log.format=logfmt
+        - --grpc-address=0.0.0.0:10910
+        - --http-address=0.0.0.0:10911
+        - --data-dir=/var/thanos/ruler
+        - --label=rule_replica="$(NAME)"
+        - --alert.label-drop=rule_replica
+        - --tsdb.retention=48h
+        - --tsdb.block-duration=2h
+        - --query=dnssrv+_grpc._tcp.thanos-query.monitoring.svc.cluster.local
+        - --alertmanagers.url=alertmanager-main.monitoring:9093
+        - --rule-file=/etc/thanos/rules/*.yaml
+        - --objstore.config-file=/config/bucket.yaml
+        ports:
+        - name: grpc
+          containerPort: 10910
+        - name: http
+          containerPort: 10911
+        - name: reloader
+          containerPort: 9533
+        env:
+        - name: NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        livenessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /-/healthy
+            port: 10911
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 3
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10911
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources: {}
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: data
+          mountPath: /var/thanos/ruler
+          readOnly: false
+        - name: thanos-objstore
+          mountPath: /config
+        - name: thanos-ruler-rules
+          mountPath: /etc/thanos/rules
+      volumes:
+      - name: thanos-objstore
+        secret:
+          secretName: thanos-objstore
+      - name: thanos-ruler-rules
+        configMap:
+          name: thanos-ruler-rules
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
