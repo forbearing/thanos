@@ -14,14 +14,9 @@ stringData:
   thanos-store.yaml: |
     type: S3
     config:
-      #bucket: "thanos-receive"
-      #endpoint: "minio.minio-tenant-thanos.svc.cluster.local:443"
-      #endpoint: "minio.minio-tenant-thanos.svc.cluster.local"
-      #access_key: "thanos"
-      #secret_key: "abc123.com"
-      bucket: "thanos"
-      endpoint: "minio.minio-tenant-proxima.svc.cluster.local"
-      access_key: "thanos"
-      secret_key: "abc123.com"
+      bucket: "<bucket_name>"
+      endpoint: "<endpoint>"
+      access_key: "<access_key>"
+      secret_key: "<secret_key>"
       insecure: true
       #signature_version2: true
