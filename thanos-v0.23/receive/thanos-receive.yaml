@@ -11,21 +11,21 @@ metadata:
     app.kubernetes.io/part-of: thanos
 spec:
   ports:
-  - name: http
-    port: 10909
-    protocol: TCP
-    targetPort: 10909
-    #nodePort: 30909
+  #- name: http
+  #  port: 10909
+  #  protocol: TCP
+  #  targetPort: 10909
+  #  #nodePort: 30909
   - name: remote-write
     port: 10908
     protocol: TCP
     targetPort: 10908
     nodePort: 30908
-  - name: grpc
-    port: 10907
-    protocol: TCP
-    targetPort: 10907
-    #nodePort: 30907
+  #- name: grpc
+  #  port: 10907
+  #  protocol: TCP
+  #  targetPort: 10907
+  #  #nodePort: 30907
   selector:
     app.kubernetes.io/name: thanos-receive
     app.kubernetes.io/component: receive
