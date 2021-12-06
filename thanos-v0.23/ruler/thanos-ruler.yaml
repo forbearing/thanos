@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/version: v0.23.1
     app.kubernetes.io/part-of: thanos
 data:
-  examples.yamls: |
+  examples.yaml: |
     groups:
     - name: kubernetes-system-kubelet
       rules:
