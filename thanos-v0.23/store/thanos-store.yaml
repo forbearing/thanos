@@ -17,11 +17,33 @@ spec:
   - name: http
     port: 10906
     targetPort: 10906
-  clusterIP: None
   selector:
     app.kubernetes.io/name: thanos-store
     app.kubernetes.io/component: store
     app.kubernetes.io/part-of: thanos
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-store-external
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/component: store
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10906
+    targetPort: 10906
+    nodePort: 30906
+  selector:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/component: store
+    app.kubernetes.io/part-of: thanos
+  type: NodePort
 
 ---
 apiVersion: apps/v1
@@ -107,7 +129,7 @@ spec:
             path: /-/healthy
             port: 10906
             scheme: HTTP
-          failureThreshold: 8
+          failureThreshold: 4
           periodSeconds: 30
           initialDelaySeconds: 10
           timeoutSeconds: 3
