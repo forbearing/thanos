@@ -1,0 +1,14 @@
+# Username: thanos
+# Password: thanos
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: thanos-basic-auth
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-basic-auth
+    app.kubernetes.io/part-of: thanos
+type: Opaque
+stringData:
+  auth: thanos:$apr1$CoMLTpYP$CWRSR1i9kyCkvn2LKp0g..
