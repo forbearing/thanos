@@ -23,32 +23,30 @@ Deploy Thanos in Kubernetes
 
 
 
-### grafana add thanos-querier datasource
+## grafana add thanos-querier datasource
 
 <img src="doc/pics/grafana_add-thanos-querier.png" alt="grafana_add-thanos-querier" style="zoom:50%;" />
 
+## All thanos k8s resources
 
+![all-thanos-svc-sts-deploy-pod](doc/pics/thanos-svc-sts-deploy-pod.png)
 
-### thanos-querier web UI
+## thanos-querier web UI
 
 <img src="doc/pics/thanos-querier_webui-1.png" alt="thanos-querier_webui-1" style="zoom:50%;" />
 
 <img src="doc/pics/thanos-querier_webui-2.png" alt="thanos-query_stores" style="zoom:50%;" />
 
-### thanos-ruler web UI
+## thanos-ruler web UI
 
 <img src="doc/pics/thanos-ruler_webui-1.png" alt="thanos-ruler_webui-1" style="zoom:50%;" />
 
 <img src="doc/pics/thanos-ruler_webui-2.png" alt="thanos-ruler_webui-2" style="zoom:50%;" />
 
-### thanos-store web UI
+## thanos-store web UI
 
 <img src="doc/pics/thanos-store_webui-1.png" alt="thanos-store_webui-1" style="zoom:50%;" />
 
-### thanos-compactor web UI
+## thanos-compactor web UI
 
 <img src="doc/pics/thanos-compactor_webui-1.png" alt="thanos-compactor_webui-1" style="zoom:50%;" />
-
-### All thanos k8s resources
-
-![all-thanos-svc-sts-deploy-pod](doc/pics/thanos-svc-sts-deploy-pod.png)
