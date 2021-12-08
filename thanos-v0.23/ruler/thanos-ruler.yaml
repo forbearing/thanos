@@ -62,6 +62,29 @@ spec:
     app.kubernetes.io/name: thanos-ruler
     app.kubernetes.io/component: ruler
     app.kubernetes.io/part-of: thanos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-ruler-external
+  namespace: monitoring
+  metadata:
+  labels:
+    app.kubernetes.io/name: thanos-ruler
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10911
+    targetPort: 10911
+    nodePort: 30911
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: thanos-ruler
+    app.kubernetes.io/component: ruler
+    app.kubernetes.io/part-of: thanos
 
 ---
 apiVersion: apps/v1
@@ -134,7 +157,7 @@ spec:
         - --alert.label-drop=rule_replica
         - --tsdb.retention=48h
         - --tsdb.block-duration=2h
-        - --query=dnssrv+_grpc._tcp.thanos-querier.monitoring.svc.cluster.local:9090
+        - --query=dnssrv+_grpc._tcp.thanos-querier.monitoring:10904
         - --alertmanagers.url=alertmanager-main.monitoring:9093
         - --rule-file=/etc/thanos/rules/*.yaml
         - --objstore.config-file=/config/bucket.yaml
