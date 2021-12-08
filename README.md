@@ -1,7 +1,7 @@
 ## Introduce
 Deploy Thanos in Kubernetes
 
-## All thanos ports
+## All thanos components ports
 
 ---
 
