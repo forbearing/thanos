@@ -27,9 +27,9 @@ Deploy Thanos in Kubernetes
 
 <img src="doc/pics/grafana_add-thanos-querier.png" alt="grafana_add-thanos-querier" style="zoom:50%;" />
 
-## All thanos k8s resources
+## thanos k8s resources
 
-![all-thanos-svc-sts-deploy-pod](doc/pics/thanos-svc-sts-deploy-pod.png)
+<img src="doc/pics/thanos-ingress-svc-sts-deploy-pod.png" alt="thanos-ingress-svc-sts-deploy-pod" style="zoom:50%;" />
 
 ## thanos-querier web UI
 
