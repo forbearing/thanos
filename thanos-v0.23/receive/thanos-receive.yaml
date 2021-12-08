@@ -150,7 +150,7 @@ spec:
         - --log.level=info
         - --log.format=logfmt
         - --tsdb.path=/var/thanos/receive
-        - --tsdb.retention=2d
+        - --tsdb.retention=1d
         #- --tsdb.retention=15d
         #- --tsdb.wal-compression
         - --grpc-address=0.0.0.0:10907
