@@ -19,6 +19,28 @@ spec:
     app.kubernetes.io/component: compactor
     app.kubernetes.io/part-of: thanos
   clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-compactor-external
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-compactor
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10912
+    targetPort: 10912
+    nodePort: 30912
+  selector:
+    app.kubernetes.io/name: thanos-compactor
+    app.kubernetes.io/component: compactor
+    app.kubernetes.io/part-of: thanos
+  type: NodePort
 
 ---
 apiVersion: apps/v1
@@ -88,7 +110,7 @@ spec:
         - --http-address=0.0.0.0:10912
         - --data-dir=/var/thanos/compactor
         - --debug.accept-malformed-index
-        - --retention.resolution-raw=0d
+        - --retention.resolution-raw=365d
         - --retention.resolution-5m=0d
         - --retention.resolution-1h=0d
         - --delete-delay=48h
