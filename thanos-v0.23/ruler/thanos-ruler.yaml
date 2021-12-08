@@ -134,7 +134,7 @@ spec:
         - --alert.label-drop=rule_replica
         - --tsdb.retention=48h
         - --tsdb.block-duration=2h
-        - --query=dnssrv+_grpc._tcp.thanos-query.monitoring.svc.cluster.local
+        - --query=dnssrv+_grpc._tcp.thanos-querier.monitoring.svc.cluster.local:9090
         - --alertmanagers.url=alertmanager-main.monitoring:9093
         - --rule-file=/etc/thanos/rules/*.yaml
         - --objstore.config-file=/config/bucket.yaml
