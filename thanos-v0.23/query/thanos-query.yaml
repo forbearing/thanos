@@ -125,7 +125,7 @@ spec:
         - --log.format=logfmt
         - --grpc-address=0.0.0.0:10903
         - --http-address=0.0.0.0:10904
-        - --query.replica-label=replica
+        - --query.replica-label=replica           # 以哪个标签做去重(deduplication), receive 的参数一定要加上 --label=replica="$(NAME)"
         - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local     # 从 thanos-receive 查询数据
         - --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local       # 从 thanos-store 查询数据
         - --store=dnssrv+_grpc._tcp.thanos-ruler.monitoring.svc.cluster.local       # 从 thanos-ruler 查询数据
