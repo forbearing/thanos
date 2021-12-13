@@ -106,8 +106,18 @@ spec:
       containers:
       - name: thanos-querier
         image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
-        # querier 可以从 thanos-receive, thanos-store thanos-sidecar thanos-ruler 查询数据
-        # 因为 thanos-receive thanos-store thanos-sidecar thanos-ruler 都实现了 Store API
+        # - querier 可以从 thanos-receive, thanos-store thanos-sidecar thanos-ruler 查询数据
+        #   因为 thanos-receive thanos-store thanos-sidecar thanos-ruler 都实现了 Store API
+        #   (但一般不会从 thanos-ruler 中查询数据，因为 thanos-ruler 作用是用来告警，并不提供查询)
+        # - 如果只是从 thanos-receive 查询数据，那么只能查询 receive 保留的数据，默认是 15 天
+        #   如果 thanos-receive 配置了 --tsdb.retention=1d 选项，则只能保存该选项指定的天数的数据
+        # - 如果要查询长时间的数据，需要加上 thanos-store，因为 store 可以从对象存储中读取以前的监控数据
+        #   对象存储中保留的监控数据时长，取决于 thanos-compactor 的三个选项，默认是保留永久时长
+        #     --retention.resolution-raw=60d
+        #     --retention.resolution-5m=60d
+        #     --retention.resolution-1h=60d
+        # - 我没用使用 thanos-sidecar，也不推荐使用 thanos-sidecar，如果你配置了 thanos-sidecar，
+        #   也可以配置上 thanos-sidecar
         args: 
         - query 
         - --log.level=info
@@ -117,8 +127,8 @@ spec:
         - --query.replica-label=replica
         - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local     # 从 thanos-receive 查询数据
         - --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local       # 从 thanos-store 查询数据
+        #- --store=dnssrv+_grpc._tcp.thanos-ruler.monitoring.svc.cluster.local       # 从 thanos-ruler 查询数据
         #- --store=dnssrv+_grpc._tcp.thanos-sidecar.monitoring.svc.cluster.local    # 从 thanos-sidecar 查询数据
-        #- --store=dnssrv+_grpc._tcp.thanos-ruler.monitoring.svc.cluster.local    # 从 thanos-ruler 查询数据
         - --query.auto-downsampling
         ports:
         - name: grpc
