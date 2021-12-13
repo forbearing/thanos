@@ -102,6 +102,18 @@ spec:
       containers:
       - name: thanos-compactor
         image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        # --retention.resolution-raw
+        #   How long to retain raw samples in bucket.
+        #   Setting this to 0d will retain samples of this resolution forever
+        # --retention.resolution-5m
+        #   How long to retain samples of resolution 1 (5minutes) in bucket. 
+        #   Setting this to 0d willretain samples of this resolution forever
+        # --retention.resolution-1h
+        #   How long to retain samples of resolution 2 (1hour) in bucket. 
+        #   Setting this to 0d will retain samples of this resolution forever
+        # --downsampling.disable
+        #   Disables downsampling. This is not recommended as querying long time ranges 
+        #   without non-downsampled data is not efficient and useful
         args:
         - compact
         - --wait
@@ -110,11 +122,11 @@ spec:
         - --http-address=0.0.0.0:10912
         - --data-dir=/var/thanos/compactor
         - --debug.accept-malformed-index
-        - --retention.resolution-raw=365d
-        - --retention.resolution-5m=0d
-        - --retention.resolution-1h=0d
+        - --retention.resolution-raw=60d
+        - --retention.resolution-5m=60d
+        - --retention.resolution-1h=60d
         - --delete-delay=48h
-        - --downsampling.disable
+        #- --downsampling.disable
         - --objstore.config-file=/config/bucket.yaml
         ports:
         - name: http
