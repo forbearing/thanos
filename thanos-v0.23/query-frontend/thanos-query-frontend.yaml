@@ -103,6 +103,9 @@ spec:
       containers:
       - name: thanos-query-frontend
         image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        # how to setup thanos-query-frontend caching, refer to following link
+        #   https://github.com/thanos-io/kube-thanos/blob/main/examples/all/manifests/thanos-query-frontend-deployment.yaml#L50-L54
+        #   https://thanos.io/tip/components/query-frontend.md
         args: 
         - query-frontend
         - --log.level=info
@@ -115,6 +118,18 @@ spec:
         - --query-range.max-retries-per-request=10
         - --labels.max-retries-per-request=10
         - --query-frontend.log-queries-longer-than=10s
+        - |-
+          --query-range.response-cache-config="config":
+            "max_size": ""
+            "max_size_items": 0
+            "validity": "0s"
+          "type": "IN-MEMORY"
+        - |-
+          --labels.response-cache-config="config":
+            "max_size": ""
+            "max_size_items": 0
+            "validity": "0s"
+          "type": "IN-MEMORY"
         ports:
         - name: http
           containerPort: 10913
