@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: thanos-querier
+  name: thanos-query
   namespace: monitoring
   labels:
-    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/name: thanos-query
     app.kubernetes.io/part-of: thanos
   annotations:
     kubernetes.io/ingress.class: "nginx"
@@ -14,13 +14,13 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: thanos-querier.example.com
+  - host: thanos-query.example.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: thanos-querier
+            name: thanos-query
             port:
               number: 10904
