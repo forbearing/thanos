@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: thanos-querier
+  name: thanos-query
   namespace: monitoring
   labels:
-    app.kubernetes.io/name: thanos-querier
-    app.kubernetes.io/component: querier
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/component: query
     app.kubernetes.io/version: v0.23.1
     app.kubernetes.io/part-of: thanos
 spec:
@@ -19,19 +19,19 @@ spec:
     protocol: TCP
     targetPort: 10904
   selector:
-    app.kubernetes.io/name: thanos-querier
-    app.kubernetes.io/component: querier
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/component: query
     app.kubernetes.io/part-of: thanos
   type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: thanos-querier-external
+  name: thanos-query-external
   namespace: monitoring
   labels:
-    app.kubernetes.io/name: thanos-querier
-    app.kubernetes.io/component: querier
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/component: query
     app.kubernetes.io/version: v0.23.1
     app.kubernetes.io/part-of: thanos
 spec:
@@ -42,8 +42,8 @@ spec:
     targetPort: 10904
     nodePort: 30904
   selector:
-    app.kubernetes.io/name: thanos-querier
-    app.kubernetes.io/component: querier
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/component: query
     app.kubernetes.io/part-of: thanos
   type: NodePort
 
@@ -51,25 +51,25 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: thanos-querier
+  name: thanos-query
   namespace: monitoring
   labels:
-    app.kubernetes.io/name: thanos-querier
-    app.kubernetes.io/component: querier
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/component: query
     app.kubernetes.io/version: v0.23.1
     app.kubernetes.io/part-of: thanos
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: thanos-querier
-      app.kubernetes.io/component: querier
+      app.kubernetes.io/name: thanos-query
+      app.kubernetes.io/component: query
       app.kubernetes.io/part-of: thanos
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: thanos-querier
-        app.kubernetes.io/component: querier
+        app.kubernetes.io/name: thanos-query
+        app.kubernetes.io/component: query
         app.kubernetes.io/part-of: thanos
     spec:
       terminationGracePeriodSeconds: 120
@@ -86,29 +86,30 @@ spec:
               - key: app.kubernetes.io/name
                 operator: In
                 values:
-                - thanos-querier
+                - thanos-query
               - key: app.kubernetes.io/component
                 operator: In
                 values:
-                - querier
+                - query
             topologyKey: kubernetes.io/hostname
           - labelSelector:
               matchExpressions:
               - key: app.kubernetes.io/name
                 operator: In
                 values:
-                - thanos-querier
+                - thanos-query
               - key: app.kubernetes.io/component
                 operator: In
                 values:
-                - querier
+                - query
             topologyKey: topology.kubernetes.io/zone
       containers:
-      - name: thanos-querier
+      - name: thanos-query
         image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
-        # - querier 可以从 thanos-receive, thanos-store thanos-sidecar thanos-ruler 查询数据
+        # - query 可以从 thanos-receive, thanos-store thanos-sidecar thanos-ruler 查询数据
         #   因为 thanos-receive thanos-store thanos-sidecar thanos-ruler 都实现了 Store API
-        #   (但一般不会从 thanos-ruler 中查询数据，因为 thanos-ruler 作用是用来告警，并不提供查询)
+        #   (一般不会只从 thanos-ruler 中查询数据，因为 thanos-ruler 作用是用来告警，并不提供查询)
+        # - thanos-ruler 会对监控数据进行评估和告警，还可能计算出新的监控数据
         # - 如果只是从 thanos-receive 查询数据，那么只能查询 receive 保留的数据，默认是 15 天
         #   如果 thanos-receive 配置了 --tsdb.retention=1d 选项，则只能保存该选项指定的天数的数据
         # - 如果要查询长时间的数据，需要加上 thanos-store，因为 store 可以从对象存储中读取以前的监控数据
@@ -127,7 +128,7 @@ spec:
         - --query.replica-label=replica
         - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local     # 从 thanos-receive 查询数据
         - --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local       # 从 thanos-store 查询数据
-        #- --store=dnssrv+_grpc._tcp.thanos-ruler.monitoring.svc.cluster.local       # 从 thanos-ruler 查询数据
+        - --store=dnssrv+_grpc._tcp.thanos-ruler.monitoring.svc.cluster.local       # 从 thanos-ruler 查询数据
         #- --store=dnssrv+_grpc._tcp.thanos-sidecar.monitoring.svc.cluster.local    # 从 thanos-sidecar 查询数据
         - --query.auto-downsampling
         ports:
