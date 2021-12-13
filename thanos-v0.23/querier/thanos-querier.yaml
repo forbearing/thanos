@@ -106,7 +106,8 @@ spec:
       containers:
       - name: thanos-querier
         image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
-        # querier 可以从 thanos-receive, thanos-store thanos-sidecar 查询数据
+        # querier 可以从 thanos-receive, thanos-store thanos-sidecar thanos-ruler 查询数据
+        # 因为 thanos-receive thanos-store thanos-sidecar thanos-ruler 都实现了 Store API
         args: 
         - query 
         - --log.level=info
@@ -117,6 +118,7 @@ spec:
         - --store=dnssrv+_grpc._tcp.thanos-receive.monitoring.svc.cluster.local     # 从 thanos-receive 查询数据
         - --store=dnssrv+_grpc._tcp.thanos-store.monitoring.svc.cluster.local       # 从 thanos-store 查询数据
         #- --store=dnssrv+_grpc._tcp.thanos-sidecar.monitoring.svc.cluster.local    # 从 thanos-sidecar 查询数据
+        #- --store=dnssrv+_grpc._tcp.thanos-ruler.monitoring.svc.cluster.local    # 从 thanos-ruler 查询数据
         - --query.auto-downsampling
         ports:
         - name: grpc
