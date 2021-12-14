@@ -1,0 +1,144 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-tools
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-tools
+    app.kubernetes.io/component: tools
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10914
+    protocol: TCP
+    targetPort: 10914
+  selector:
+    app.kubernetes.io/name: thanos-tools
+    app.kubernetes.io/component: tools
+    app.kubernetes.io/part-of: thanos
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-tools-external
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-tools
+    app.kubernetes.io/component: tools
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  ports:
+  - name: http
+    port: 10914
+    protocol: TCP
+    targetPort: 10914
+    nodePort: 30914
+  selector:
+    app.kubernetes.io/name: thanos-tools
+    app.kubernetes.io/component: tools
+    app.kubernetes.io/part-of: thanos
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-tools
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: thanos-tools
+    app.kubernetes.io/component: tools
+    app.kubernetes.io/version: v0.23.1
+    app.kubernetes.io/part-of: thanos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-tools
+      app.kubernetes.io/component: tools
+      app.kubernetes.io/part-of: thanos
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-tools
+        app.kubernetes.io/component: tools
+        app.kubernetes.io/part-of: thanos
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-tools
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - tools
+            topologyKey: kubernetes.io/hostname
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - thanos-tools
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - tools
+            topologyKey: topology.kubernetes.io/zone
+      containers:
+      - name: thanos-tools
+        image: registry.cn-shanghai.aliyuncs.com/hybfkuf/thanos:v0.23.1
+        args: 
+        - tools
+        - bucket
+        - web
+        - --log.level=info
+        - --log.format=logfmt
+        - --http-address=0.0.0.0:10914
+        - --objstore.config-file=/config/bucket.yaml
+        ports:
+        - name: http
+          containerPort: 10914
+        livenessProbe:
+          failureThreshold: 4
+          httpGet:
+            path: /-/healthy
+            port: 10914
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 3
+        readinessProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /-/ready
+            port: 10914
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: thanos-objstore
+          mountPath: /config
+      volumes:
+      - name: thanos-objstore
+        secret:
+          secretName: thanos-objstore
